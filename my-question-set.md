@@ -72,8 +72,9 @@ Question Set with Answers
 **Example Answer:**  
 
 ---
-  &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;END
----
+        
+  <div align="center"><h2>END</h2></div>
+  
 - [x] I am declaring that, the above work is my own work. Whatever added above
 except the template is the result of my brainstorming. I also understand that
 submitting work that isn’t my own may result in permanent failure of this course
