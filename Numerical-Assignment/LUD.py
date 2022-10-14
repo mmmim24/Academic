@@ -1,15 +1,15 @@
 import sys
 from tabulate import tabulate
 
-# n = int(input('Number of variables: '))
-
-# a = [[0 for i in range(n+1)] for j in range(n)] 
 n = 3
 a = [
     [25,5,1,106.8],
     [64,8,1,177.2],
     [144,12,1,279.2]
 ]
+
+n = int(input('Number of variables: '))
+a = [[0 for i in range(n+1)] for j in range(n)] 
 I = [[0 for i in range(n)] for j in range(n)]
 
 b = [[0 for i in range(n)] for j in range(n)]
@@ -23,6 +23,8 @@ z = [0 for i in range(n)]
 d = [0 for i in range(n)]
 p = [0 for i in range(n)]
 q = [0 for i in range(n)]
+
+
 #generating identity matrix
 for i in range(n):
     for j in range(n):
@@ -30,25 +32,28 @@ for i in range(n):
             l[i][j] = I[i][j] = 1
         else:
             l[i][j] = I[i][j] = 0
-# print('Enter Matrix in following form:\n')
-# for i in range(n):
-#     for j in range(n+1):
-#         print('a'+str(i+1)+str(j+1), end = ' ')
-#     print()
-# print()
 
-# for i in range(n):
-#     for j in range(n+1):
-#         a[i][j] = float(input( 'a'+str(i+1)+str(j+1)+' = '))
+print('Enter Matrix in following form:\n')
+for i in range(n):
+    for j in range(n+1):
+        print('a'+str(i+1)+str(j+1), end = ' ')
+    print()
+print()
 
+for i in range(n):
+    for j in range(n+1):
+        a[i][j] = float(input( 'a'+str(i+1)+str(j+1)+' = '))
+
+#initializing upper triangular matrix
 for i in range(n):
     for j in range(n):
         u[i][j] = a[i][j]
 
+#initializing constants
 for i in range(n):
     c[i] = a[i][n]
 
-
+#calculating upper and lower unit triangular matrix
 for i in range(n):
     if u[i][i] == 0.0:
         sys.exit('Divide by zero!')
@@ -56,9 +61,9 @@ for i in range(n):
     for j in range(i+1, n):
         ratio = u[j][i]/u[i][i]
         l[j][i] = ratio
-        
         for k in range(n):
             u[j][k] = u[j][k] - ratio * u[i][k]
+        
 
 
 def LUDec(l,u,c,x,z):
@@ -74,17 +79,19 @@ def LUDec(l,u,c,x,z):
             x[i] = x[i] - u[i][j]*x[j]
         x[i] = x[i]/u[i][i]
 
-LUDec(l,u,c,x,z)
 
 #inverse matrix
+def inverse():
+    LUDec(l,u,c,x,z)
+    for i in range(n):
+        for j in range(n):
+            d[j] = I[j][i]
+        LUDec(l,u,d,p,q)
+        for j in range(n):
+            b[j][i] = p[j]
 
-for i in range(n):
-    for j in range(n):
-        d[j] = I[j][i]
-    LUDec(l,u,d,p,q)
-    for j in range(n):
-        b[j][i] = p[j]
-
+# LUDec(l,u,c,x,z)
+inverse()
 print('Inverse Matrix')
 print(tabulate(b))
 # print('upper triangular matrix')
