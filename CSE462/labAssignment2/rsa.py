@@ -1,7 +1,7 @@
 import random
 import math
-k = int(input("Bit Size = "))
-
+import timeit
+a,b,c = 0,0,0
 def is_prime(n):
     if n == 2:
         return True
@@ -15,79 +15,65 @@ def is_prime(n):
 def generate_prime(k):
     global n 
     while(True):
-        n = random.Random().randint(0, 1<<(k//2))
+        n = random.Random().randint(0, 1<<k)
         if is_prime(n):
             return n
-        
-p = generate_prime(k)
-q = generate_prime(k)
-e =  generate_prime(k)
-n = p*q
-phi = (p-1)*(q-1)
 
-
-print(phi)
-print(n)
-      
-print(f'Generating a {k/2}-bit key pair {p} and {q}')
-
-
-
-
-def gcd(a, b):
-    """Calculate the greatest common divisor of two numbers."""
-    while b != 0:
-        a, b = b, a % b
-    return a
-
-def mod_inverse(a, m):
-    """Calculate the modular inverse of 'a' modulo 'm'."""
-    m0, x0, x1 = m, 0, 1
-    while a > 1:
-        q = a // m
-        m, a = a % m, m
-        x0, x1 = x1 - q * x0, x0
-    return x1 + m0 if x1 < 0 else x1
+def mod_inverse(a, b):
+    m0,t1,t2 = b,0,1
+    while a > 1 and b!=0:
+        q = a//b
+        b,a = a%b,b
+        t1,t2 = t2 - q*t1,t1
+    if t2<0:
+        return t2+m0
+    else:
+        return t2
 
 def generate_keypair(k):
-    """Generate RSA key pair."""
-    p = generate_prime(k // 2)
-    q = generate_prime(k // 2)
+    p = generate_prime(k)
+    q = generate_prime(k)
     n = p * q
     phi = (p - 1) * (q - 1)
-    
-    # Choose public exponent e
-    e = 65537  # Commonly used value for e
-    
-    # Calculate private exponent d
+    e = generate_prime(k)
+    # print(f'phi = {phi}')
+    # print(f'e = {e}')
     d = mod_inverse(e, phi)
-    
     return ((e, n), (d, n))
 
-def encrypt(message, public_key):
-    """Encrypt a message using RSA."""
+def encrypt(text, public_key):
     e, n = public_key
-    encrypted_message = [pow(ord(char), e, n) for char in message]
-    return encrypted_message
+    encrypted_text = [0 for _ in range(len(text))]
+    for i in range(len(text)):
+        encrypted_text[i] = pow(ord(text[i]), e, n)
+    return encrypted_text
 
-def decrypt(encrypted_message, private_key):
-    """Decrypt a message using RSA."""
+def decrypt(encrypted_text, private_key):
     d, n = private_key
-    decrypted_message = [chr(pow(char, d, n)) for char in encrypted_message]
-    return ''.join(decrypted_message)
+    text = ['0' for _ in range(len(encrypted_text))]
+    for i in range(len(encrypted_text)):
+        text[i] = chr(pow(encrypted_text[i], d, n))
+
+    decrypted_text = ''.join(text)
+    return decrypted_text
 
 def main():
-    k = 16  # Key length
-    public_key, private_key = generate_keypair(k)
-    print("Public Key:", public_key)
-    print("Private Key:", private_key)
+    k = int(input("Bit Size = "))
+    public_key, private_key = generate_keypair(k//2)
+    print("\n\nPublic Key: (e,n) =", public_key)
+    print("Private Key: (d,n) =", private_key)
     
-    message = input("Enter a message to encrypt: ")
-    encrypted_message = encrypt(message, public_key)
-    print("Encrypted Message:", encrypted_message)
+    text = input("\n\nPlain Text:\n")
+    encrypted_text = encrypt(text, public_key)
+    print("Encrypted Text(ASCII):\n", encrypted_text)
     
-    decrypted_message = decrypt(encrypted_message, private_key)
-    print("Decrypted Message:", decrypted_message)
+    decrypted_text = decrypt(encrypted_text, private_key)
+    print("Decrypted Text:\n", decrypted_text)
+
+    print("\n\nExecution Time:")
+    print("Key Generation:",timeit.timeit(lambda: generate_keypair(k//2), number=1))
+    print("Encryption:",timeit.timeit(lambda: encrypt(text, public_key), number=1))
+    print("Decryption:",timeit.timeit(lambda: decrypt(encrypted_text, private_key), number=1))
 
 if __name__ == "__main__":
     main()
