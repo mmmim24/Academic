@@ -1,7 +1,7 @@
 import random
 import math
 import timeit
-a,b,c = 0,0,0
+
 def is_prime(n):
     if n == 2:
         return True
@@ -71,9 +71,9 @@ def main():
     print("Decrypted Text:\n", decrypted_text)
 
     print("\n\nExecution Time:")
-    print("Key Generation:",timeit.timeit(lambda: generate_keypair(k//2), number=1))
-    print("Encryption:",timeit.timeit(lambda: encrypt(text, public_key), number=1))
-    print("Decryption:",timeit.timeit(lambda: decrypt(encrypted_text, private_key), number=1))
+    print("Key Generation:",timeit.timeit(lambda: generate_keypair(k//2), number=1),"sec")
+    print("Encryption:",timeit.timeit(lambda: encrypt(text, public_key), number=1),"sec")
+    print("Decryption:",timeit.timeit(lambda: decrypt(encrypted_text, private_key), number=1),"sec")
 
 if __name__ == "__main__":
     main()

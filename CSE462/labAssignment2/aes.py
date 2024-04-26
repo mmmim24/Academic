@@ -1,110 +1,225 @@
-import time
-from BitVector import *
-from BitVector_Helper import *
 from BitVector_Helper import *
 from BitVector import *
-key="Thats my Kung Fu"
-plainText="Two One Nine Two"
-RoundConstants = [BitVector(intVal=0x01, size=8), BitVector(intVal=0x02, size=8), BitVector(intVal=0x04, size=8), BitVector(intVal=0x08, size=8), BitVector(intVal=0x10, size=8), BitVector(intVal=0x20, size=8), BitVector(intVal=0x40, size=8), BitVector(intVal=0x80, size=8), BitVector(intVal=0x1b, size=8), BitVector(intVal=0x36, size=8)]
+import timeit 
+RoundConstants = [
+        ['0x01','0x00','0x00','0x00'],
+        ['0x02','0x00','0x00','0x00'],
+        ['0x04','0x00','0x00','0x00'],
+        ['0x08','0x00','0x00','0x00'],
+        ['0x10','0x00','0x00','0x00'],
+        ['0x20','0x00','0x00','0x00'],
+        ['0x40','0x00','0x00','0x00'],
+        ['0x80','0x00','0x00','0x00'],
+        ['0x1b','0x00','0x00','0x00'],
+        ['0x36','0x00','0x00','0x00'],
+    ]
+def Subst(state):
+    mat = []
+    for i in state:
+        j = int(i,16)
+        mat.append(hex(Sbox[j]))
+    # print(mat)
+    return mat
 
-hex = BitVector(textstring=key)
-w=[]
-for i in range(0,128,32):
-    w.append([hex[i:i+8],hex[i+8:i+16],hex[i+16:i+24],hex[i+24:i+32]])
+def InvSubst(state):
+    mat = []
+    for i in state:
+        j = int(i,16)
+        mat.append(hex(InvSbox[j]))
+    # print(mat)
+    return mat
 
-def g(word,round):
-    w = word.copy()
-    s = w[0]
-    for i in range(3):
-        w[i]=w[i+1]
-    w[3]=s
+def Shift(state):  
+    for i in range(0, 4):
+        row = [i, i+4, i+8, i+12]
+        row_val = [state[row[0]],state[row[1]],state[row[2]],state[row[3]]]
+        for j in range(0, 4):
+            new = (j - i)%4
+            state[row[new]] = row_val[j]
+    # print(state)
+    return state 
+
+def invShift(state):  
+    for i in range(0, 4):
+        row = [i, i+4, i+8, i+12]
+        row_val = [state[row[0]],state[row[1]],state[row[2]],state[row[3]]]
+        for j in range(0, 4):
+            new = (j + i)%4
+            state[row[new]] = row_val[j]
+    # print(state)
+    return state 
+
+def Mix(state):  
+    mat = []
+    for k in range(0,4):
+        for i in range(0,4):  
+            col = [k*4,(k*4)+1,(k*4)+2,(k*4)+3]
+            res = []
+            for j in range(4): 
+                val = Mixer[i][j].gf_multiply_modular(BitVector(hexstring = state[col[j]][2:]),AES_modulus, 8)
+                res.append(int(val.getHexStringFromBitVector(),16))
+            mat.append(hex(res[0] ^ res[1] ^ res[2] ^ res[3]))
+    # print(mat)
+    return mat
+
+def InvMix(state):
+    mat = []
+    for k in range(0,4): 
+        for i in range(0,4):  
+            col = [k*4,(k*4)+1,(k*4)+2,(k*4)+3]
+            res = []
+            for j in range(4): 
+                val = InvMixer[i][j].gf_multiply_modular(BitVector(hexstring = state[col[j]][2:]),AES_modulus, 8)
+                res.append(int(val.getHexStringFromBitVector(),16))
+            mat.append(hex(res[0] ^ res[1] ^ res[2] ^ res[3]))
+    # print(mat)
+    return mat
+
+
+def addRoundKey(state, key):
+    mat = []
+    for i in range(len(state)):   
+        mat.append(hex(int(state[i],16)^int(key[i],16)))
+    # print(mat)
+    return mat
+
+def inHex(str):
+    res = ""
+    for i in str:
+        res += hex(ord(i))[2:]
+    return res
+
+def hexMat(str):
+    matrix = []
+    for i in range(16):
+        matrix.append(hex(ord(str[i])))
+    return matrix 
+
+def genRoundKey(key,RoundConstants):
+    r0 = [key[0],key[1],key[2],key[3]]
+    r1 = [key[4],key[5],key[6],key[7]]
+    r2 = [key[8],key[9],key[10],key[11]]
+    r3 = [key[12],key[13],key[14],key[15]]
+    # circular left shift
+    g = [key[13],key[14],key[15],key[12]]
+    # byte substitution
+    for i in range(4):  
+        g[i] = hex(Sbox[int(g[i],16)])
+    # XOR with round constant
+    for i in range(4):   
+        g[i] = hex(int(g[i],16) ^ int(RoundConstants[i],16))
+    
+    r4 = r5 = r6 = r7 = []
+    res_key = []
+
     for i in range(4):
-        w[i]=(BitVector(intVal=Sbox[w[i].intValue()],size=8))
-    w[0]=w[0]^RoundConstants[round]
-    return w
-
-# for i in w:
-#     for j in i:
-#         print(j.get_bitvector_in_hex().upper(),end=" ")
-#     print()
-# print()
-
-# for i in range(4):
-#     for j in range(4):
-#         print(w[i][j],end=" ")
-#     print()
-# print()
-
-# for i in range(4):
-#     print(w[3][i].get_bitvector_in_hex().upper(),end=" ")
-# print()
-
-
-def RoundKeyGeneration(w):
-    z = w.copy()
+        r4.append(hex(int(g[i],16) ^ int(r0[i],16)))
+    for i in r4: res_key.append(i)
     for i in range(4):
-        for j in range(4):
-            print(f'w[{i}][{j}] = {z[i][j].get_bitvector_in_hex().upper()}',end=" ")
-        print()
-    for i in range(4,44):
-        if i%4==0:
-            print(i)
-            x = g(z[i-1],(i//4)-1)
-            for j in range(4):
-                print(x[j].get_bitvector_in_hex().upper(),end=" ")
-            print()
-            for j in range(4):
-                x[j] = x[j]^z[i-4][j]
-                print(x[j],end=" ")
-                print(f'w[{i}][{j}] = {x[j].get_bitvector_in_hex().upper()}',end=" ")
-            # z.append(x)
-                # x = x ^ BitVector(intVal=z[i-4][j], size=8)
+        r5.append(hex(int(r4[i],16) ^ int(r1[i],16)))
+    for i in r5: res_key.append(i)
+    for i in range(4):
+        r6.append(hex(int(r5[i],16) ^ int(r2[i],16)))
+    for i in r6: res_key.append(i)
+    for i in range(4):
+        r7.append(hex(int(r6[i],16) ^ int(r3[i],16)))
+    for i in r7: res_key.append(i)
+    return res_key
 
-        else:
-            x = z[i-1]
-            for j in range(4):
-                x[j] = z[i-1][j]^z[i-4][j]
-                print(f'w[{i}][{j}] = {x[j].get_bitvector_in_hex().upper()}',end=" ")
-            # z.append(x)
-                # x = x ^ BitVector(intVal=z[i-4][j], size=8)
-        z.append(x)
-        print(z[i][3].get_bitvector_in_hex().upper(),end="\n")
+def encrypt(plaintext,roundKey):
+    encryption = ""
+    if(len(plaintext)%16):
+        for i in range(16-(len(plaintext)%16)):
+            plaintext += "*"
+    # print(plaintext)
+    for i in range(0, len(plaintext), 16):
+        block = plaintext[i:i+16]
+        state = hexMat(block)
+        state = addRoundKey(state,roundKey[0])
+        for i in range(1,11):
+            state = Subst(state)
+            state = Shift(state)
+            if(i < 10): state = Mix(state)
+            state = addRoundKey(state,roundKey[i])
+        for i in state:
+            encryption += chr(int(i,16))
+    # print(encryption)
+    return encryption
+            
+    
+def decrypt(ciphertext,roundKey,sz):
+    decryption = ""
+    for i in range(0, len(ciphertext), 16):
+        block = ciphertext[i:i+16]
+        state = hexMat(block)
+        state = addRoundKey(state,roundKey[10])
+        for i in reversed(range(10)):
+            state = invShift(state)
+            state = InvSubst(state)
+            state = addRoundKey(state,roundKey[i])
+            if(i > 0): state = InvMix(state)
+        
+        for i in range(len(state)):
+            decryption += chr(int(state[i],16))   
+    # print(decryption)
+    return decryption[0:sz]
+
+def keygeneration(key):
+    RoundConstants = [
+        ['0x01','0x00','0x00','0x00'],
+        ['0x02','0x00','0x00','0x00'],
+        ['0x04','0x00','0x00','0x00'],
+        ['0x08','0x00','0x00','0x00'],
+        ['0x10','0x00','0x00','0x00'],
+        ['0x20','0x00','0x00','0x00'],
+        ['0x40','0x00','0x00','0x00'],
+        ['0x80','0x00','0x00','0x00'],
+        ['0x1b','0x00','0x00','0x00'],
+        ['0x36','0x00','0x00','0x00'],
+    ]
+    round_keys = []
+    round_keys.append(hexMat(key))
+    for i in range(10):
+        round_keys.append(genRoundKey(round_keys[i],RoundConstants[i]))
+    return round_keys
+
+def main():
+    
+    print("\nKey:")
+    key = input("In ASCII:")
+    print("In HEX:",inHex(key))
     print()
-    for i in range(44):
-        for j in range(4):
-            print(f'w[{i}][{j}] = {z[i][j].get_bitvector_in_hex().upper()}',end=" ")
-        print()
-
-    return z
-
-# w.append(w[0]^g(w[3],0))
-# x = g(w[3],0)
-# for i in range(4):
-#     print(x[i].get_bitvector_in_hex().upper(),end=" ")
-print('\n--')
-# for i in range(4):
-#     print(w[3][i].get_bitvector_in_hex().upper(),end=" ")
-# print()
-# print(type(x[0].intValue()))
-# print(type(w[0][0].intValue())) 
-# for j in range(4):
-#     x[j] = x[j]^w[0][j]
-z = RoundKeyGeneration(w)
-# w.append(x)
-
-
-
-# for i in range(4):
-#     print(x[i].get_bitvector_in_hex().upper(),end=" ")
-print('\n--\n')
-# for i in range(4):
-#     print(w[4][i].get_bitvector_in_hex().upper(),end=" ")
-# print()
-
-for i in range(44):
-    for j in range(4):
-        print(z[i][j].get_bitvector_in_hex().upper(),end=" ")
+    
+    print("Plaintext:")
+    plaintext = input("In ASCII:")
+    print("In HEX:",inHex(plaintext))
     print()
-print()
+    
 
-print(RoundConstants[0])
+    roundKey = keygeneration(key)
+    
+    encrypted_text = encrypt(plaintext,roundKey)
+    decrypted_text = decrypt(encrypted_text,roundKey,len(plaintext))
+    print("Cipher Text:")
+    print("In ASCII:",encrypted_text)
+    print("In HEX:",inHex(encrypted_text))
+    print()
+    
+    print("Decipher Text:")
+    print("In ASCII:",decrypted_text)
+    print("In HEX:",inHex(decrypted_text))
+    print()
+    
+    print("Execution Time:")
+    print("Key Scheduling:",timeit.timeit(lambda: genRoundKey(roundKey[1],RoundConstants[1]), number=10),"sec")
+    print("encrypt Time:",timeit.timeit(lambda: encrypt(plaintext,roundKey), number=1),"sec")
+    print("decrypt Time:",timeit.timeit(lambda: decrypt(encrypted_text,roundKey,len(plaintext)),number=1),"sec")
+    
+if __name__ == "__main__":
+    main()
+    
+    
+
+   
+   
+    
