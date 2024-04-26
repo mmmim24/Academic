@@ -56,9 +56,9 @@ s_int = Sbox[b_int]
 # print("s_int :",s_int)
 s_bin = BitVector(intVal=s_int, size=8)
 # print("s_bin :",s_bin)
-print("s_hex :",s_bin.get_bitvector_in_hex())
+# print("s_hex :",s_bin.get_bitvector_in_hex())
 
-print("---------------------------------------")
+# print("---------------------------------------")
 # sample mapping i.e. For an element {3e} corresponding value is {d1} from Inv-s-box (look slide : 49 of Cryptography Slide)
 b_bin = BitVector(hexstring="3e")
 # print("b_bin :",b_bin)
@@ -68,14 +68,14 @@ s_int = InvSbox[b_int]
 # print("s_int :",s_int)
 s_bin = BitVector(intVal=s_int, size=8)
 # print("s_bin :",s_bin)
-print("s_hex :",s_bin.get_bitvector_in_hex())
+# print("s_hex :",s_bin.get_bitvector_in_hex())
 
 
 
 
 
 
-print("\n======================================n")
+# print("\n======================================n")
 
 
 
@@ -125,6 +125,6 @@ d = st30.gf_multiply_modular(mix03, AES_modulus, 8)
 res00 = (a.intValue()^b.intValue())^(c.intValue()^d.intValue())
 
 # print("res00_int :",res00)
-print("res00hex :",hex(res00))
+# print("res00hex :",hex(res00))
 
 # For InvMixColumn Step : You_Know_How       (Credit@ You_Know_Who)
